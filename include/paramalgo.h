@@ -1,3 +1,7 @@
+#ifndef    PARAMALGO_H
+#define    PARAMALGO_H
+
+
 
 
 template <typename T>
@@ -30,3 +34,5 @@ struct paramSpeckle {
     T gamma;
     T sigmaR=0;
 };
+
+#endif

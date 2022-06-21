@@ -4,6 +4,7 @@ NVCC=${CUDA_PATH}/bin/nvcc -ccbin ${HOST_COMPILER}
 TARGET=cuSpeckle
 
 INCLUDES= -I${CUDA_PATH}/samples/common/inc -I${CUDA_PATH}/include
+INCLUDES+= -Iinclude 
 NVCC_FLAGS=-m64 -lineinfo
 
 IS_CUDA_11:=${shell expr `$(NVCC) --version | grep compilation | grep -Eo -m 1 '[0-9]+.[0-9]' | head -1` \>= 11.0}
@@ -17,7 +18,7 @@ $(foreach sm, ${SMS}, $(eval GENCODE_FLAGS += -gencode arch=compute_$(sm),code=s
 
 LIBS=-lcurand 
 
-SOURCES=speckle_generator_main.cpp MC_estimation_cuda.cu io_png.c 
+SOURCES=src/* lib/*
 
 CXX_FLAGS=-O3 -lpng
 
