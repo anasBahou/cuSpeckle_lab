@@ -23,7 +23,6 @@ namespace cg = cooperative_groups;
 
 #define CUDA_CALL(x) do { if((x) != cudaSuccess) {printf("Error at %s:%d\n",__FILE__,__LINE__); return EXIT_FAILURE;}} while(0)
 
-//////// MUST have the SAME declaration as in "speckle_generator_main.cpp" ////////////////////////// 
 
 // mapping(displacement/deformation) function
 __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *x_out, float *y_out)
@@ -33,22 +32,9 @@ __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *
     *y_out = y_in;
 }
 
-struct Random_disk {
-    float x;
-    float y;
-    float r;
-};
-
-struct Boolean_model_disk {
-    Random_disk disk;
-    float rbound;
-};
-
-
 
 /*
 delta estimation function
-@fun : mapping function (should be declared before. For usage as a parameter in the following function, declare it as "fun<T>" not as "fun")
 @dims : image dimensions
 */
 float estimate_delta(vec2D<int> dims)

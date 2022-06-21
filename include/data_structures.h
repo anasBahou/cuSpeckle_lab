@@ -35,4 +35,19 @@ struct paramSpeckle {
     T sigmaR=0;
 };
 
+
+///////// structures for MC estimation /////////
+struct Random_disk {
+    float x;
+    float y;
+    float r;
+};
+
+struct Boolean_model_disk {
+    Random_disk disk;
+    float rbound;
+};
+
+
+
 #endif

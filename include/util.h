@@ -6,7 +6,7 @@
 #include <random>
 #include <cstring>
 
-#include "paramalgo.h"
+#include "data_structures.h"
 
 void show_help();
 

@@ -13,13 +13,11 @@
 #include <cmath>
 #include <functional>
 
-#include "paramalgo.h"
+#include "data_structures.h"
 #include <boost/math/special_functions/erf.hpp>
 // #include "mapping_functions.h"
 
 const float pi = 3.14159265358979323846f;
-
-void generate_random_radius(float output[], float *kappa, float *theta, paramSpeckle<float> myParamSpeckle, vec2D<int> dims, int number, unsigned int seed);
 
 float estimate_delta(vec2D<int> dims);
 
