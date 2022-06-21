@@ -1,0 +1,12 @@
+// replace the code inside "func" in "speckle_generator_main.cpp" line 27 and in "MC_estimation_cuda.cu" line 32 with the identity mapping function (no deformation) as follows:
+
+    *x_out = x_in;
+    *y_out = y_in;
+
+// save both files
+
+// re-build the executable by running "make"
+
+// you can generate the figure results by running the following command line:
+./cuSpeckle ref_star.png -width 500 -height 500
+
