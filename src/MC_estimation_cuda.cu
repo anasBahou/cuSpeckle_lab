@@ -8,8 +8,7 @@
 #include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
-#include "boolean_model.h"
-// #include "kernel.h"
+#include "speckle_gen.h"
 
 #include <helper_cuda.h>
 #include <cuda_runtime.h>
@@ -34,7 +33,7 @@ __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *
 
 
 /*
-delta estimation function
+delta estimation function to calculate a uniform upper bound of the Frobenius norm of the Jacobian matrix J of the inverse displacement field U
 @dims : image dimensions
 */
 float estimate_delta(vec2D<int> dims)

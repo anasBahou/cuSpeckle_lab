@@ -1,4 +1,4 @@
-#include "boolean_model.h"
+#include "speckle_gen.h"
 
 
 void generate_random_radius(float output[], float *kappa, float *theta, paramSpeckle<float> myParamSpeckle, vec2D<int> dims, int number, unsigned int seed)
@@ -120,17 +120,6 @@ void boolean_model(float *Random_centers, float *Random_radius, float *RBound, p
     {
         RBound[i] = pow(Random_radius[i] + (1 + delta) * tmp_icdf * sigma, 2);
     }
-
-#ifdef DEBUG
-    printf("A few samples from Random_radius : ");
-    for (int i = 0; i < 10; ++i)
-    {
-        printf("%f* ", Random_radius[i]);
-        printf("%f, ", Random_centers[i]);
-        printf("%f| ", RBound[i]);
-    }
-    printf("\n");
-#endif
 }
 
 

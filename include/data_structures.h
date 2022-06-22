@@ -10,6 +10,7 @@ struct vec2D {
     T y;
 };
 
+////////// parameters structures for user's inputs ///////////////
 
 template <typename T>
 struct paramAlgo {

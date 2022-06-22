@@ -14,7 +14,6 @@ void show_help()
               << "Usage: "
               << " speckle_generator_main imgNameOut.png [options]\n\n"
               << "Options (default values in parentheses)\n"
-              << "-prec : data precision (0: float(default), 1:double)\n"
               << "-distribR : probability distribution of the radii ('E' for exponential, 'U' for uniform, 'P' for Poisson, 'L' for log-normal)\n"
               << "-gamma : standard deviation of the radius\n"
               << "-lambda : average number of disks per image\n"

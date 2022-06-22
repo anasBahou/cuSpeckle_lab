@@ -2,7 +2,7 @@
 
 #include "io_png.h"
 #include "util.h"
-#include "boolean_model.h"
+#include "speckle_gen.h"
 
 
 int main(int argc, char *argv[])
