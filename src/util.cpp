@@ -156,3 +156,18 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
 
     return (0);
 }
+
+
+
+
+void write_csv_matrix(const char* filename, float* data, int height , int width , int depth )
+{
+	std::ofstream myfile(filename);
+    myfile <<  height << "\n";
+    myfile <<  width <<  "\n";
+    myfile <<  depth <<  "\n";
+
+	for (int n = 0; n < height* width*depth; n++)
+	myfile << std::setprecision(16) << data[n+3] << "\n";
+	
+}

@@ -144,29 +144,35 @@ int main(int argc, char *argv[])
 
     myDims.x = width;
     myDims.y = height;
+    myDims.z = depth;
+
     myParamSpeckle.distribR = distribR;
     myParamSpeckle.gamma = gamma;
     myParamSpeckle.lambda = lambda;
     myParamSpeckle.mu = mu;
     myParamSpeckle.sigmaR = sigmaR;
+
     myParamAlgo.alpha = alpha;
     myParamAlgo.N0 = N0;
     myParamAlgo.NMCmax = NMCmax;
+
     myParamSensor.dims = myDims;
     myParamSensor.nbit = nbit;
     myParamSensor.sigma = sigma;
 
     //display parameters
     std::cout << "------- Sensor params -------" << std::endl;
-    std::cout << "Image size : " << width << " x " << height << std::endl;
+    std::cout << "Image size : " << width << " x " << height << " x " << depth <<  std::endl;    
     std::cout << "nbit : " << nbit << std::endl;
     std::cout << "sigma : " << sigma << std::endl;
+
     std::cout << "------- Speckle params -------" << std::endl;
     std::cout << "distribR : " << distribR << std::endl;
     std::cout << "gamma : " << gamma << std::endl;
     std::cout << "lambda : " << lambda << std::endl;
     std::cout << "mu : " << mu << std::endl;
     std::cout << "sigmaR : " << sigmaR << std::endl;
+    
     std::cout << "------- Algorithm params -------" << std::endl;
     std::cout << "alpha : " << alpha << std::endl;
     std::cout << "N0 : " << N0 << std::endl;
@@ -186,14 +192,14 @@ int main(int argc, char *argv[])
     std::cout << "***************************" << std::endl;
 
     float *speckle_matrix;
-    speckle_matrix = (float *)malloc(width * height * sizeof(float));
+    speckle_matrix = (float *)malloc(width * height * depth * sizeof(float));
 
     // Draw the number of disks, following a Poisson distribution of intensity "lambda"
     std::mt19937_64 generator(seed);
     std::poisson_distribution<int> distrib(myParamSpeckle.lambda);
     int number = distrib(generator);
 #ifdef DEBUG
-    printf("number of disks = %d\n", number);
+    printf("number of spheres = %d\n", number);
 #endif
 
     // allocate memory for the generated Random_radius
@@ -204,7 +210,7 @@ int main(int argc, char *argv[])
     RBound = (float *)malloc(number * sizeof(float)); // same size as Random_radius
     // generate RC
     float *Random_centers;
-    Random_centers = (float *)malloc(2 * number * sizeof(float)); // this is a vector with x (pair indexes)and y (impair indexes) for each RC
+    Random_centers = (float *)malloc(3 * number * sizeof(float)); // this is a vector with x, y  and z for each RC
 
     boolean_model(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed);
 
@@ -220,20 +226,27 @@ int main(int argc, char *argv[])
 
     //quantization ==> output in range [0, 2^nbit-1]
     float *qt_out = NULL;
-    qt_out = (float *)malloc(width * height * sizeof(float));
-    quantization(qt_out, speckle_matrix, width * height, nbit);
+    qt_out = (float *)malloc(width * height * depth * sizeof(float));
+    quantization(qt_out, speckle_matrix, width * height * depth, nbit);
 
     //create output float image
     float *imgOut = NULL;
-    imgOut = (float *)malloc(width * height * 1 * sizeof(float)); // number of channels is 3 <=> RGB
+    imgOut = (float *)malloc(width * height *depth * 1 * sizeof(float)); // number of channels is 3 <=> RGB
 
     for (int i = 0; i < height; ++i)
     {
         for (int j = 0; j < width; j++)
-        {
-            imgOut[j + i * width] = qt_out[j + i * width]; //red
+        {    
+            for (int k = 0; k < depth; k++)
+            {
+            imgOut[(j + i * width) * 3 + k] = qt_out[(j + i * width) * 3 + k]; //red
+            }
         }
     }
+
+    int size= height*width*depth;
+    write_csv_matrix("FirstCuda3D.csv", imgOut, height, width, depth);
+    
     write_output_image(imgOut, fileNameOut, myParamSpeckle, myParamAlgo, myParamSensor);
 
     // free the allocated memory

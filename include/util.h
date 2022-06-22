@@ -6,6 +6,9 @@
 #include <random>
 #include <cstring>
 
+#include <iomanip>     /*setprecision */
+#include <fstream>
+
 #include "data_structures.h"
 
 void show_help();
@@ -24,5 +27,9 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
                        paramSpeckle<float> myParamSpeckle,
                        paramAlgo<float> myParamAlgo,
                        paramSensor<float> myParamSensor);
+
+
+void write_csv_matrix(const char* filename, float* data,int height , int width , int depth );
+
 
 
