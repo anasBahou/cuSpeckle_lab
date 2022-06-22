@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     std::string fileNameOut(argv[1]);
 
     float mu, sigma, sigmaR, gamma, alpha, lambda;
-    int width, height, nbit, N0, NMCmax;
+    int width, height, depth, nbit, N0, NMCmax;
     unsigned int seed;
     char distribR;
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     paramSpeckle<float> myParamSpeckle;
     paramAlgo<float> myParamAlgo;
     paramSensor<float> myParamSensor;
-    vec2D<int> myDims;
+    vec3D<int> myDims;
 
     myDims.x = width;
     myDims.y = height;
@@ -209,7 +209,14 @@ int main(int argc, char *argv[])
     boolean_model(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed);
 
     // monte_carlo_estimation<T>(speckle_matrix, Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, fun, seed);
-    monte_carlo_estimation_cuda(speckle_matrix, Random_centers, Random_radius, RBound, number, seed, width, height, alpha, nbit, gamma, N0);
+    monte_carlo_estimation_cuda(speckle_matrix,
+                                Random_centers,
+                                Random_radius,
+                                RBound,
+                                number, 
+                                seed, 
+                                width, height,depth, 
+                                alpha, nbit, gamma, N0);
 
     //quantization ==> output in range [0, 2^nbit-1]
     float *qt_out = NULL;

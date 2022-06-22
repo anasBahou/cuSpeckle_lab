@@ -26,7 +26,7 @@ namespace cg = cooperative_groups;
 
 // mapping(displacement/deformation) function
 __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float z_in,
-                                                float *x_out, float *y_out,float *z_in,)
+                                                float *x_out, float *y_out,float *z_out)
 {
     // identity function
     *x_out = x_in;
@@ -63,16 +63,16 @@ float estimate_delta(vec3D<int> dims)
 
                 float fx = 0, fy = 0, fz=0; // outputs of "fun"
                 mapping(x, y,z,  &fx, &fy, &fz);
-                dX[(column + row * width)+page] = fx - x;
-                dY[(column + row * width)+page] = fy - y;
-                dZ[(column + row * width)+page] = fx - z;
+                dX[(column + row * width) * 3 +page] = fx - x;
+                dY[(column + row * width) * 3 +page] = fy - y;
+                dZ[(column + row * width) * 3 +page] = fx - z;
                 }
             }
     }
 
 
     float *sqF;
-    sqF = (float *)malloc((width - 1) * (height - 1)(depth - 1) * sizeof(float));
+    sqF = (float *)malloc((width - 1) * (height - 1) * (depth - 1) * sizeof(float));
     float max = -INFINITY;
     float sqF_r_c = 0;
     // Matlab equivalent ==>  diff(dX(:,2:end),1,1).^2 + diff(dY(:,2:end),1,1).^2 + diff(dX(2:end,:),1,2).^2 + diff(dY(2:end,:),1,2).^2;
@@ -82,16 +82,18 @@ float estimate_delta(vec3D<int> dims)
         {
             for (int page = 0; page < depth - 1; ++page)
             {
-            sqF_r_c =  pow(dX[((column + 1) + row * width)+page] - dX[((column + 1) + (row + 1) * width)+page], 2);
-            sqF_r_c += pow(dY[((column + 1) + row * width)+page] - dY[((column + 1) + (row + 1) * width)+page], 2);
-            sqF_r_c += pow(dZ[((column + 1) + row * width)+page] - dZ[((column + 1) + (row + 1) * width)+page], 2);
+            sqF_r_c =  pow(dX[((column + 1) + row * width) * 3 + page] - dX[((column + 1) + (row + 1) * width) * 3 + page], 2);
+            sqF_r_c += pow(dY[((column + 1) + row * width) * 3 + page] - dY[((column + 1) + (row + 1) * width) * 3 + page], 2);
+            sqF_r_c += pow(dZ[((column + 1) + row * width) * 3 + page] - dZ[((column + 1) + (row + 1) * width) * 3 + page], 2);
 
-            sqF_r_c += pow(dX[((column + 1) + row * width)+page] - dX[((column + 1) + (row + 1) * width)+ page], 2);
-            sqF_r_c += pow(dY[((column + 1) + row * width)+page] - dY[((column + 1) + (row + 1) * width)+ page], 2);
-            sqF_r_c += pow(dZ[((column + 1) + row * width)+page] - dZ[((column + 1) + (row + 1) * width)+page], 2);
-
-            sqF[(column + row * (width - 1))+page] = sqF_r_c;
-            max = (sqF[(column + row * (width - 1))+page] > max) ? sqF[(column + row * (width - 1))+page] : max; // calculate max
+            sqF_r_c += pow(dX[((column + 1) + row * width) * 3 + page] - dX[((column + 1) + (row + 1) * width) * 3 + page], 2);
+            sqF_r_c += pow(dY[((column + 1) + row * width) * 3 + page] - dY[((column + 1) + (row + 1) * width) * 3 + page], 2);
+            sqF_r_c += pow(dZ[((column + 1) + row * width) * 3 + page] - dZ[((column + 1) + (row + 1) * width) * 3 + page], 2);
+                        
+            // ((column + 1) + row * width)+page previous index equation " this is wrong "
+                        //(column + 1)*3 + row * width*3+page
+            sqF[(column + row * (width - 1)) * 3 +page] = sqF_r_c;
+            max = (sqF[(column  + row * (width - 1)) * 3 + page] > max) ? sqF[(column  + row * (width - 1)) * 3 + page] : max; // calculate max
             }
         
         }
@@ -163,7 +165,7 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     unsigned int intensity = 0;
 
     // what is float2, i will try rand_var.z and see what would the error be like, is there float3
-    float3 rand_var; // OR double2
+    float4 rand_var;// OR double2
 
     Random_sphere sphere; // tmp sphere
     /* Copy state to local memory for efficiency */
@@ -172,7 +174,7 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
 
     for(int i = 0; i < max_itr_per_thread; ++i)
     {
-        rand_var = curand_normal2(&localState);
+        rand_var = curand_normal4 (&localState);// it was curand_normal2//
         float fx = 0, fy = 0, fz = 0;
         mapping(x + rand_var.x, y + rand_var.y,z+rand_var.z,
                  &fx, &fy, &fz);
@@ -197,7 +199,7 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     
     if (id < r_itr_per_thread)
     {
-        rand_var = curand_normal2(&localState);
+        rand_var = curand_normal4(&localState);// same problem of 175 line code 
 
         float fx = 0, fy = 0, fz = 0;
         mapping(x + rand_var.x, y + rand_var.y,z+rand_var.z,
@@ -209,7 +211,7 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
             sphere = sphere_arr[k];
             float d1 = sphere.x  - fx;
             float d2 = sphere.y - fy;
-            folat d3 = sphere.z - fz;
+            float d3 = sphere.z - fz;
             float dist = d1 * d1 + d2 * d2+ d3 * d3;
             if (dist < sphere.r)
             {
@@ -328,9 +330,10 @@ int monte_carlo_estimation_cuda(float *speckle_matrix,
     {
         for (int y = 1; y < height + 1; ++y)
         {
-            for (int z=1; z< depth + 1, ++z)
+            for (int z=1; z< depth + 1; ++z)
             {
-                            float fx = 0, fy = 0;
+            
+            float fx = 0, fy = 0, fz=0;
             float d1, d2, d3;
             mapping(x, y, z, &fx, &fy, &fz);
             // calculate L(x,y) = Ind
@@ -389,7 +392,7 @@ int monte_carlo_estimation_cuda(float *speckle_matrix,
                 CUDA_CALL(cudaMemset(devResults, 0, grid.x * sizeof(unsigned int)));
 
                 //Monte Carlo estimation with sample size = NMC
-                compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, NMC, devResults, x, y, sphere_arr, count);
+                compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, NMC, devResults, x, y,z, sphere_arr, count);
                 /* Copy device memory to host */
                 CUDA_CALL(cudaMemcpy(hostResults, devResults, grid.x *
                     sizeof(unsigned int), cudaMemcpyDeviceToHost));
