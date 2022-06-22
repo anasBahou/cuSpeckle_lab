@@ -28,6 +28,9 @@ int main(int argc, char *argv[])
     int width, height, nbit, N0, NMCmax;
     unsigned int seed;
     char distribR;
+    std::string dispX_filename, dispY_filename; // displacements maps "csv" file names
+
+    bool mesh_mode = false; // flag to detect mesh mode
 
     
 
@@ -136,6 +139,31 @@ int main(int argc, char *argv[])
     else
         mu = 0.5;
 
+    // read disp maps from csv files
+    if (cmdOptionExists(argv, argv + argc, "-dispX_file"))
+    {
+        dispX_filename = getCmdOption(argv, argv + argc, "-dispX_file");
+        mesh_mode = true;
+    }
+    else
+    {
+        mesh_mode = false;
+        std::cout << "Error no dispX_file file" << std::endl;
+        std::cout << "Using the mapping function" << std::endl;
+    }
+
+    if (cmdOptionExists(argv, argv + argc, "-dispY_file"))
+    {
+        dispY_filename = getCmdOption(argv, argv + argc, "-dispY_file");
+        mesh_mode = true;
+    }
+    else
+    {
+        mesh_mode = false;
+        std::cout << "Error no dispY_file file" << std::endl;
+        std::cout << "Using the mapping function" << std::endl;
+    }
+
     /////// init parameters
     paramSpeckle<float> myParamSpeckle;
     paramAlgo<float> myParamAlgo;
@@ -206,10 +234,39 @@ int main(int argc, char *argv[])
     float *Random_centers;
     Random_centers = (float *)malloc(2 * number * sizeof(float)); // this is a vector with x (pair indexes)and y (impair indexes) for each RC
 
-    boolean_model(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed);
+    if(mesh_mode)
+    {
+        // read displacement maps from csv files
+        int nb_regions_x, nb_regions_y;
+        std::vector<float> vect_map_x, vect_map_y;
+        vect_map_x = read_csv_matrix<float>(dispX_filename, &nb_regions_x, &nb_regions_y);
+        vect_map_y = read_csv_matrix<float>(dispY_filename, &nb_regions_x, &nb_regions_y);
 
-    // monte_carlo_estimation<T>(speckle_matrix, Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, fun, seed);
-    monte_carlo_estimation_cuda(speckle_matrix, Random_centers, Random_radius, RBound, number, seed, width, height, alpha, nbit, gamma, N0);
+        // copy data to raw vector
+        float *disp_map_x;
+        disp_map_x = (float *)malloc((vect_map_x.size()) * sizeof(float));
+        std::copy(vect_map_x.begin(), vect_map_x.end(), disp_map_x);
+        float *disp_map_y;
+        disp_map_y = (float *)malloc((vect_map_y.size()) * sizeof(float));
+        std::copy(vect_map_y.begin(), vect_map_y.end(), disp_map_y);
+
+        boolean_model_mesh(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed, disp_map_x, disp_map_y, nb_regions_x, nb_regions_y);
+
+        // monte_carlo_estimation<T>(speckle_matrix, Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, fun, seed);
+        monte_carlo_estimation_mesh(speckle_matrix, Random_centers, Random_radius, RBound, number, seed, width, height, alpha, nbit, gamma, N0, disp_map_x, disp_map_y);
+
+    }
+    else
+    {
+        // in case of using a "mapping" function
+        boolean_model(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed);
+
+        // monte_carlo_estimation<T>(speckle_matrix, Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, fun, seed);
+        monte_carlo_estimation_cuda(speckle_matrix, Random_centers, Random_radius, RBound, number, seed, width, height, alpha, nbit, gamma, N0);
+    }
+    
+
+    
 
     //quantization ==> output in range [0, 2^nbit-1]
     float *qt_out = NULL;

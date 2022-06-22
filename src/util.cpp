@@ -27,6 +27,8 @@ void show_help()
               << "-nbit : bit depth\n"
               << "-sigmaG : standard deviation of the Gaussian PSF\n"
               << "-seed : seed of the random generator (default: 2020, shuffle: 0)\n"
+              << "-dispX_file : X displacements map file (format = \".csv\")\n"
+              << "-dispY_file : Y displacements map file (format = \".csv\")\n"
               << std::endl;
 }
 
@@ -155,3 +157,49 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
 
     return (0);
 }
+
+
+/**
+ * @brief read csv file and returs the data as "std::vector"
+ * 
+ * @tparam T : data type
+ * @param filename : csv file name to read data from
+ * @param size_x (output): nb of columns 
+ * @param size_y (output): nb of raws
+ * @return std::vector<T> 
+ */
+
+template <typename T>
+std::vector<T> read_csv_matrix(std::string filename, int *size_x, int *size_y)
+{
+    std::vector<T> output;
+
+    std::ifstream infile(filename);
+
+    if (infile.fail())
+        std::cerr << "Error no such file\n";
+    std::string line, data;
+    int count_row = 0, count_col = 0;
+    while (std::getline(infile, line))
+    {
+        std::stringstream linestream(line);
+        T value;
+        count_col = 0;
+        while (std::getline(linestream, data, ','))
+        {
+            std::stringstream convert(data);
+            convert >> std::setprecision(16) >> value;
+            output.push_back(value);
+            ++count_col;
+        }
+        ++count_row;
+    }
+
+    *size_x = count_col;
+    *size_y = count_row;
+
+    return output;
+}
+
+
+template std::vector<float> read_csv_matrix(std::string filename, int *size_x, int *size_y);

@@ -122,6 +122,46 @@ void boolean_model(float *Random_centers, float *Random_radius, float *RBound, p
     }
 }
 
+void boolean_model_mesh(float *Random_centers, float *Random_radius, float *RBound, paramSpeckle<float> myParamSpeckle, paramAlgo<float> myParamAlgo, paramSensor<float> myParamSensor, int number, unsigned int seed, float *disp_map_x, float *disp_map_y, int nb_regions_x, int nb_regions_y)
+{
+    // init local variables
+    vec2D<int> dims = myParamSensor.dims;
+    float alpha = myParamAlgo.alpha;
+    int nbit = myParamSensor.nbit;
+    float gamma = myParamSpeckle.gamma;
+    float sigma = myParamSensor.sigma;
+
+    // translate "Random_centers = repmat(dims,[number,1]).*rand(number,2,prec);"
+    std::mt19937_64 generator(seed);
+    std::uniform_real_distribution<float> distribution;
+    for (int i = 0; i < number; ++i)
+    {
+        Random_centers[2 * i] = (float)dims.x * (float)distribution(generator);     // x of RC
+        Random_centers[2 * i + 1] = (float)dims.y * (float)distribution(generator); // y of RC
+    }
+
+    float kappa = 0, theta = 0;
+    // generate random radii
+    generate_random_radius(Random_radius, &kappa, &theta, myParamSpeckle, dims, number, seed);
+
+    printf("coverage ratio: %f\nexpected perimeter: %f\n", kappa, theta);
+    printf("largest Monte Carlo sample size: %d\n", (int)floor((float)((float)1 / pi / 2 * gamma * gamma * pow(2, (2 * nbit)) / (alpha * alpha))));
+
+    // estimate delta
+    float delta = estimate_delta_mesh(dims, disp_map_x, disp_map_y);
+    printf("Estimated delta : %E\n", delta);
+
+    // estimate B
+    float tmp_icdf = icdf(1 - pi * alpha / sqrt(2) / pow(2, nbit) / 10);
+    printf("Estimated B : %.4f * sigma\n", tmp_icdf); // This should print 3.7547 for alpha=0.1 and nbit=8 (the same result as Matlab function)
+
+    for (int i = 0; i < number; ++i)
+    {
+        RBound[i] = pow(Random_radius[i] + (1 + delta) * tmp_icdf * sigma, 2);
+    }
+}
+
+
 
 void quantization(float *img_out, float *speckle_matrix, int img_size, int nbit)
 {
