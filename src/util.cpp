@@ -1,37 +1,14 @@
-/* this file contain common functions used in the project */
 
 
-//#include" include/utils"
+#include "io_png.h"
+#include "util.h"
 
-#include<iostream>
-#include <stdio.h>      /* printf */
-#include <math.h>       /* round, floor, ceil, trunc */
-#include <algorithm>    /* find,  */
 
-void quantization(float *img_out, float *speckle_matrix, int img_size, int nbit)
-{
-    for (int i = 0; i < img_size; ++i)
-    {
-        img_out[i] = round(speckle_matrix[i]);
-
-        if (img_out[i] < 0)
-        {
-            img_out[i] = 0;
-        }
-
-        if (img_out[i] > pow(2, nbit) - 1)
-        {
-            img_out[i] = pow(2, nbit) - 1;
-        }
-    }
-}
-
-///////////////////////////////////////////////////////
 
 
 
 /// help on usage of inpainting code
-static void show_help()
+void show_help()
 {
     std::cerr << "\nSpeckle Generator.\n"
               << "Usage: "
@@ -146,19 +123,14 @@ std::string get_curr_dir()
  * 
  */
 /**
-* @brief Write the output to a .tiff or .png image.
+* @brief Write the output to a .png image.
 *
 * @param imgOut output image to write
 * @param fileNameOut output file name
 * @return 0 if write success, -1 if failure
 */
-
-
-template <typename T>
 int write_output_image(float *imgOut, const std::string fileNameOut,
-                       paramSpeckle<T> myParamSpeckle,
-                       paramAlgo<T> myParamAlgo,
-                       paramSensor<T> myParamSensor)
+                       paramSpeckle<float> myParamSpeckle, paramAlgo<float> myParamAlgo, paramSensor<float> myParamSensor)
 {
     std::string outputExtension(getFileExt(fileNameOut));
 
@@ -184,13 +156,3 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
 
     return (0);
 }
-
-/**
- * @brief speckle generator main function
- * 
- * @tparam T 
- * @param argc 
- * @param argv 
- * @param prec data precision
- * @return int 
- */
