@@ -1,6 +1,3 @@
-#include "mapping_functions.h"
-
-
 /*
 modsinewave2 mapping function
 */

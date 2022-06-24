@@ -22,26 +22,6 @@ namespace cg = cooperative_groups;
 
 #define CUDA_CALL(x) do { if((x) != cudaSuccess) {printf("Error at %s:%d\n",__FILE__,__LINE__); return EXIT_FAILURE;}} while(0)
 
-
-// mapping(displacement/deformation) function
-/**
- * @brief mapping function that registers (x, y) in image before and after deformation. It calculate mapping(x_in, y_in) and saves it to (x_out, y_out)
- * 
- * @param x_in input x coordinate
- * @param y_in input y coordinate
- * @param x_out pointer to output x coordinate
- * @param y_out pointer to output y coordinate
-
- * @return void
-*/
-__host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *x_out, float *y_out)
-{
-    // identity function
-    *x_out = x_in;
-    *y_out = y_in;
-}
-
-
 /**
  * @brief delta estimation function to calculate a uniform upper bound of the Frobenius norm of the Jacobian matrix J of the inverse displacement field U
  * 
@@ -49,7 +29,7 @@ __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *
 
  * @return float
 */
-float estimate_delta(vec2D<int> dims)
+float estimate_delta_mesh(vec2D<int> dims, float *disp_map_x, float *disp_map_y)
 {
     const int width = dims.x;
     const int height = dims.y;
@@ -58,16 +38,18 @@ float estimate_delta(vec2D<int> dims)
     dX = (float *)malloc(size * sizeof(float));
     dY = (float *)malloc(size * sizeof(float));
 
-    for (int row = 0; row < height; ++row)
+    float cur_disp_x, cur_disp_y; //current displacements for each region
+    float fx = 0, fy = 0;         //actual displacements for each pixel
+    for (int x = 1; x < height + 1; ++x)
     {
-        float y = row + 1; // fix the same "y" value in each row
-        for (int column = 0; column < width; ++column)
+        for (int y = 1; y < width + 1; ++y)
         {
-            float x = column + 1; // fix the same "x" value in each column
-            float fx = 0, fy = 0; // outputs of "fun"
-            mapping(x, y, &fx, &fy);
-            dX[column + row * width] = fx - x;
-            dY[column + row * width] = fy - y;
+            cur_disp_x = disp_map_x[(y - 1) + (x - 1) * width];
+            cur_disp_y = disp_map_y[(y - 1) + (x - 1) * width];
+            fx = x + cur_disp_x;
+            fy = y + cur_disp_y;
+            dX[(x - 1) + (y - 1) * width] = fx - x;
+            dY[(x - 1) + (y - 1) * width] = fy - y;
         }
     }
 
@@ -104,7 +86,7 @@ float estimate_delta(vec2D<int> dims)
  * @return __device__ unsigned int
  */
 
-__device__ unsigned int reduce_sum(unsigned int in, cg::thread_block cta)
+__device__ unsigned int reduce_sum_2(unsigned int in, cg::thread_block cta)
 {
     extern __shared__ unsigned int sdata[];
 
@@ -137,14 +119,13 @@ __device__ unsigned int reduce_sum(unsigned int in, cg::thread_block cta)
 
  * @return void
 */
-__global__ void setup_kernel(unsigned int seed, curandStatePhilox4_32_10_t *state)
+__global__ void setup_kernel_2(unsigned int seed, curandStatePhilox4_32_10_t *state)
 {
     int id = threadIdx.x + blockIdx.x * blockDim.x;
     /* Each thread gets same seed, a different sequence
        number, no offset */
     curand_init(seed, id, 0, &state[id]);
 }
-
 
 /**
  * @brief Initialize the PRNG by affecting the same seed to each thread but a different sequence
@@ -156,12 +137,14 @@ __global__ void setup_kernel(unsigned int seed, curandStatePhilox4_32_10_t *stat
  * @param y pixel's y coordinate
  * @param disk_arr "L" search space
  * @param rc_size size of "L"
+ * @param cur_disp_x corresponding x-displacement to the current pixel
+ * @param cur_disp_y corresponding y-displacement to the current pixel
 
  * @return void
 */
 __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state,
                                         int samples,
-                                        unsigned int *result, int x, int y, Random_disk* disk_arr, int rc_size)
+                                        unsigned int *result, int x, int y, Random_disk* disk_arr, int rc_size, float cur_disp_x, float cur_disp_y)
 {
     // Handle to thread block group
     cg::thread_block cta = cg::this_thread_block();
@@ -179,7 +162,8 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     for(int i = 0; i < max_itr_per_thread; ++i) {
         rand_var = curand_normal2(&localState);
         float fx = 0, fy = 0;
-        mapping(x + rand_var.x, y + rand_var.y, &fx, &fy);
+        fx = x + cur_disp_x + rand_var.x;
+        fy = y + cur_disp_y + rand_var.y;
 
         // check if phi(x+Xm) belongs to one of the disks
         for (unsigned int k = 0; k < rc_size; ++k)
@@ -200,7 +184,8 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     if (id < r_itr_per_thread){                
         rand_var = curand_normal2(&localState);
         float fx = 0, fy = 0;
-        mapping(x + rand_var.x, y + rand_var.y, &fx, &fy);
+        fx = x + cur_disp_x + rand_var.x;
+        fy = y + cur_disp_y + rand_var.y;
 
         // check if phi(x+Xm) belongs to one of the disks
         for (unsigned int k = 0; k < rc_size; ++k)
@@ -224,7 +209,7 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     // result[id] += intensity;
 
     // Reduce within the block
-    intensity = reduce_sum(intensity, cta);
+    intensity = reduce_sum_2(intensity, cta);
 
     // Store the result
     if (threadIdx.x == 0)
@@ -232,7 +217,6 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
         result[bid] = intensity;
     }
 }
-
 
 /**
  * @brief Render the reel image from the Boolean model using MC integration method
@@ -249,10 +233,12 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
  * @param nbit software parameter
  * @param gamma software parameter
  * @param N0 software parameter
+ * @param disp_map_x x-displacement map
+ * @param disp_map_y y-displacement map
 
  * @return int 
 */
-int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, float *Random_radius, float *RBound, int number, unsigned int seed, int width, int height, float alpha, int nbit, float gamma, int N0)
+int monte_carlo_estimation_mesh(float *speckle_matrix, float *Random_centers, float *Random_radius, float *RBound, int number, unsigned int seed, int width, int height, float alpha, int nbit, float gamma, int N0, float* disp_map_x, float* disp_map_y)
 {
 
     //----- cuda Threads/Blocks setup variables(preparation) ----- ///
@@ -326,20 +312,30 @@ int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, fl
     }
     
     /* Setup prng states */
-    setup_kernel<<<grid, block>>>(seed, devPHILOXStates);
+    setup_kernel_2<<<grid, block>>>(seed, devPHILOXStates);
 
     // utility var 
     int count = 0;
     float dist;
+
+    // //define regions and displacement per region
+    // const unsigned int region_size_x = width/nb_regions_x;
+    // const unsigned int region_size_y = height/nb_regions_y;
+
+    float cur_disp_x, cur_disp_y; //current displacements for each pixel
 
     // Monte Carlo estimation
     for (int x = 1; x < width + 1; ++x)
     {
         for (int y = 1; y < height + 1; ++y)
         {
+            cur_disp_x = disp_map_x[(x - 1) + (y - 1) * width];
+            cur_disp_y = disp_map_y[(x - 1) + (y - 1) * width];
             float fx = 0, fy = 0;
             float d1, d2;
-            mapping(x, y, &fx, &fy);
+            // Disp<float>()(x, y, &fx, &fy);
+            fx = x+cur_disp_x;
+            fy = y+cur_disp_y;
             // calculate L(x,y) = Ind
             count = 0; // size of RR
             Random_disk disk;
@@ -363,7 +359,7 @@ int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, fl
             CUDA_CALL(cudaMemset(devResults, 0, grid.x * sizeof(unsigned int)));
 
             //Monte Carlo estimation with sample size = N0
-            compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, N0, devResults, x, y, disk_arr, count);
+            compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, N0, devResults, x, y, disk_arr, count, cur_disp_x, cur_disp_y);
             /* Copy device memory to host */
             CUDA_CALL(cudaMemcpy(hostResults, devResults, grid.x *
                 sizeof(unsigned int), cudaMemcpyDeviceToHost));
@@ -391,7 +387,7 @@ int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, fl
                 CUDA_CALL(cudaMemset(devResults, 0, grid.x * sizeof(unsigned int)));
 
                 //Monte Carlo estimation with sample size = NMC
-                compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, NMC, devResults, x, y, disk_arr, count);
+                compute_intensity_kernel_float<<<grid, block, block.x *sizeof(unsigned int)>>>(devPHILOXStates, NMC, devResults, x, y, disk_arr, count, cur_disp_x, cur_disp_y);
                 /* Copy device memory to host */
                 CUDA_CALL(cudaMemcpy(hostResults, devResults, grid.x *
                     sizeof(unsigned int), cudaMemcpyDeviceToHost));
@@ -415,10 +411,9 @@ int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, fl
     free(hostResults);
     free(BM_disk_arr);
 
+
     for (int i = 0; i < width * height; ++i)
         speckle_matrix[i] = pow(2, nbit - 1) + (gamma * pow(2, nbit) * (speckle_matrix[i] - 0.5));
-
-    printf("^^^^ MC estimation CUDA test PASSED\n");
 
     return EXIT_SUCCESS;
 }

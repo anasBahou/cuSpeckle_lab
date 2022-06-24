@@ -1,0 +1,7 @@
+
+Example of generating a vertical(Ux) sinwave deformation (period=50 and Amp=5) with Uy=0 [check "example" folder for more details]:
+    # generate reference image:
+        ./cuSpeckle ref.png -width 100 -height 100 -dispX_file examples/mesh_example/sinV_p50_s100_Uy.csv -dispY_file examples/mesh_example/sinV_p50_s100_Uy.csv -seed 2022
+    # generate deformed image
+        ./cuSpeckle def.png -width 100 -height 100 -dispX_file examples/mesh_example/sinV_p50_s100_Ux.csv -dispY_file examples/mesh_example/sinV_p50_s100_Uy.csv -seed 2022 
+

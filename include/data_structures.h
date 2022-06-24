@@ -1,3 +1,7 @@
+#ifndef    PARAMALGO_H
+#define    PARAMALGO_H
+
+
 
 
 template <typename T>
@@ -6,6 +10,7 @@ struct vec2D {
     T y;
 };
 
+////////// parameters structures for user's inputs ///////////////
 
 template <typename T>
 struct paramAlgo {
@@ -30,3 +35,20 @@ struct paramSpeckle {
     T gamma;
     T sigmaR=0;
 };
+
+
+///////// structures for MC estimation /////////
+struct Random_disk {
+    float x;
+    float y;
+    float r;
+};
+
+struct Boolean_model_disk {
+    Random_disk disk;
+    float rbound;
+};
+
+
+
+#endif
