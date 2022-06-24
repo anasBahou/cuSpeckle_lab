@@ -24,6 +24,16 @@ namespace cg = cooperative_groups;
 
 
 // mapping(displacement/deformation) function
+/**
+ * @brief mapping function that registers (x, y) in image before and after deformation. It calculate mapping(x_in, y_in) and saves it to (x_out, y_out)
+ * 
+ * @param x_in input x coordinate
+ * @param y_in input y coordinate
+ * @param x_out pointer to output x coordinate
+ * @param y_out pointer to output y coordinate
+
+ * @return void
+*/
 __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *x_out, float *y_out)
 {
     // identity function
@@ -32,9 +42,12 @@ __host__ __device__ __forceinline__ void mapping(float x_in, float y_in, float *
 }
 
 
-/*
-delta estimation function to calculate a uniform upper bound of the Frobenius norm of the Jacobian matrix J of the inverse displacement field U
-@dims : image dimensions
+/**
+ * @brief delta estimation function to calculate a uniform upper bound of the Frobenius norm of the Jacobian matrix J of the inverse displacement field U
+ * 
+ * @param dims image dimensions
+
+ * @return float
 */
 float estimate_delta(vec2D<int> dims)
 {
@@ -84,11 +97,11 @@ float estimate_delta(vec2D<int> dims)
 }
 
 /** From cuda_samples/MC_EstimatePiP
- * @brief Calculate the sum within the block
+ * @brief Calculate the sum within the block using parallel reduction
  * 
- * @param in 
- * @param cta 
- * @return __device__ 
+ * @param in input value
+ * @param cta thread_block
+ * @return __device__ unsigned int
  */
 
 __device__ unsigned int reduce_sum(unsigned int in, cg::thread_block cta)
@@ -116,6 +129,14 @@ __device__ unsigned int reduce_sum(unsigned int in, cg::thread_block cta)
     return sdata[0];
 }
 
+/**
+ * @brief Initialize the PRNG by affecting the same seed to each thread but a different sequence
+ * 
+ * @param seed PRNG seed from the software parameters
+ * @param state the generated initial states of the PRNG
+
+ * @return void
+*/
 __global__ void setup_kernel(unsigned int seed, curandStatePhilox4_32_10_t *state)
 {
     int id = threadIdx.x + blockIdx.x * blockDim.x;
@@ -124,6 +145,20 @@ __global__ void setup_kernel(unsigned int seed, curandStatePhilox4_32_10_t *stat
     curand_init(seed, id, 0, &state[id]);
 }
 
+
+/**
+ * @brief Initialize the PRNG by affecting the same seed to each thread but a different sequence
+ * 
+ * @param state PRNG states' array
+ * @param samples Number of MC experiments to execute
+ * @param result output results of sub-sommation of the calculated sample mean 
+ * @param x pixel's x coordinate
+ * @param y pixel's y coordinate
+ * @param disk_arr "L" search space
+ * @param rc_size size of "L"
+
+ * @return void
+*/
 __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state,
                                         int samples,
                                         unsigned int *result, int x, int y, Random_disk* disk_arr, int rc_size)
@@ -198,6 +233,25 @@ __global__ void compute_intensity_kernel_float(curandStatePhilox4_32_10_t *state
     }
 }
 
+
+/**
+ * @brief Render the reel image from the Boolean model using MC integration method
+ * 
+ * @param speckle_matrix Output rendered speckle image matrix
+ * @param Random_centers Input generated disk centers from Boolean model
+ * @param Random_radius Input generated disk radii from Boolean model
+ * @param RBound Input RBound 
+ * @param number toatal number of generated disks
+ * @param seed PRNG seed
+ * @param width image width
+ * @param height image height
+ * @param alpha software parameter
+ * @param nbit software parameter
+ * @param gamma software parameter
+ * @param N0 software parameter
+
+ * @return int 
+*/
 int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, float *Random_radius, float *RBound, int number, unsigned int seed, int width, int height, float alpha, int nbit, float gamma, int N0)
 {
 
@@ -368,27 +422,3 @@ int monte_carlo_estimation_cuda(float *speckle_matrix, float *Random_centers, fl
 
     return EXIT_SUCCESS;
 }
-
-// template <typename T>
-// void monte_carlo_estimation_cuda(T *speckle_matrix, T *Random_centers, T *Random_radius, T *RBound, int number, unsigned int seed, int width, int height, T alpha, int nbit, T gamma, int N0)
-// {
-//     int test_success;
-//     if (typeid(T) == typeid(float)){
-//         test_success = MC_estimation_cuda_float((float *)speckle_matrix, (float *)Random_centers, (float *)Random_radius, (float *)RBound, number, seed, width, height, (float)alpha, nbit, (float)gamma, N0);
-//     }
-//     else if (typeid(T) == typeid(double)){
-//         test_success = MC_estimation_cuda_double((double *)speckle_matrix, (double *)Random_centers, (double *)Random_radius, (double *)RBound, number, seed, width, height, (double)alpha, nbit, (double)gamma, N0);
-//     }
-//     else{
-//         printf("Could not run MC estimation CUDA\n");
-//     }
-
-//     if (test_success==EXIT_SUCCESS)
-//         printf("^^^^ MC estimation CUDA test PASSED\n");
-//     else
-//         printf("Could not run MC estimation CUDA\n");
-
-// }
-
-// template void monte_carlo_estimation_cuda<float>(float *, float *, float *, float *, int, unsigned int, int, int, float, int, float, int);
-// template void monte_carlo_estimation_cuda<double>(double *, double *, double *, double *, int, unsigned int, int, int, double, int, double, int);

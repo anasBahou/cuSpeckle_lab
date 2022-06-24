@@ -1,6 +1,18 @@
 #include "speckle_gen.h"
 
+/**
+ * @brief generate Random disk center coordinates
+ * 
+ * @param output output array
+ * @param kappa output coverage ratio
+ * @param theta output expected perimeter
+ * @param myParamSpeckle speckle parameters
+ * @param dims image dimensions
+ * @param number toatal number of generated disks
+ * @param seed PRNG seed
 
+ * @return void
+*/
 void generate_random_radius(float output[], float *kappa, float *theta, paramSpeckle<float> myParamSpeckle, vec2D<int> dims, int number, unsigned int seed)
 {
 
@@ -78,9 +90,19 @@ float icdf(float p)
 }
 
 
-/*
+/**
+ * @brief generate Boolean model and RBound
+ * 
+ * @param Random_centers output generated disk centers from Boolean model
+ * @param Random_radius output generated disk radii from Boolean model
+ * @param RBound output RBound array
+ * @param myParamSpeckle speckle parameters
+ * @param myParamAlgo Algorithm parameters
+ * @param myParamSensor Sensor parameters
+ * @param number toatal number of generated disks
+ * @param seed PRNG seed
 
-@Random_radius: output
+ * @return void
 */
 
 void boolean_model(float *Random_centers, float *Random_radius, float *RBound, paramSpeckle<float> myParamSpeckle, paramAlgo<float> myParamAlgo, paramSensor<float> myParamSensor, int number, unsigned int seed)
@@ -122,7 +144,24 @@ void boolean_model(float *Random_centers, float *Random_radius, float *RBound, p
     }
 }
 
-void boolean_model_mesh(float *Random_centers, float *Random_radius, float *RBound, paramSpeckle<float> myParamSpeckle, paramAlgo<float> myParamAlgo, paramSensor<float> myParamSensor, int number, unsigned int seed, float *disp_map_x, float *disp_map_y, int nb_regions_x, int nb_regions_y)
+
+/**
+ * @brief generate Boolean model and RBound
+ * 
+ * @param Random_centers output generated disk centers from Boolean model
+ * @param Random_radius output generated disk radii from Boolean model
+ * @param RBound output RBound array
+ * @param myParamSpeckle speckle parameters
+ * @param myParamAlgo Algorithm parameters
+ * @param myParamSensor Sensor parameters
+ * @param number toatal number of generated disks
+ * @param seed PRNG seed
+ * @param disp_map_x x-displacement map
+ * @param disp_map_y y-displacement map
+
+ * @return void
+*/
+void boolean_model_mesh(float *Random_centers, float *Random_radius, float *RBound, paramSpeckle<float> myParamSpeckle, paramAlgo<float> myParamAlgo, paramSensor<float> myParamSensor, int number, unsigned int seed, float *disp_map_x, float *disp_map_y)
 {
     // init local variables
     vec2D<int> dims = myParamSensor.dims;
@@ -162,7 +201,16 @@ void boolean_model_mesh(float *Random_centers, float *Random_radius, float *RBou
 }
 
 
+/**
+ * @brief quantization of the image matrix over nbit
+ * 
+ * @param img_out output quantized image
+ * @param speckle_matrix input speckle matrix
+ * @param img_size image size (width x height)
+ * @param nbit quantization depth
 
+ * @return void
+*/
 void quantization(float *img_out, float *speckle_matrix, int img_size, int nbit)
 {
     for (int i = 0; i < img_size; ++i)

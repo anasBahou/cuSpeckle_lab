@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
         disp_map_y = (float *)malloc((vect_map_y.size()) * sizeof(float));
         std::copy(vect_map_y.begin(), vect_map_y.end(), disp_map_y);
 
-        boolean_model_mesh(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed, disp_map_x, disp_map_y, nb_regions_x, nb_regions_y);
+        boolean_model_mesh(Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, seed, disp_map_x, disp_map_y);
 
         // monte_carlo_estimation<T>(speckle_matrix, Random_centers, Random_radius, RBound, myParamSpeckle, myParamAlgo, myParamSensor, number, fun, seed);
         monte_carlo_estimation_mesh(speckle_matrix, Random_centers, Random_radius, RBound, number, seed, width, height, alpha, nbit, gamma, N0, disp_map_x, disp_map_y);
