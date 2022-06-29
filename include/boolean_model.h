@@ -13,6 +13,7 @@
 #include <cmath>
 #include <functional>
 
+#include "util.h"
 #include "data_structures.h"
 #include <boost/math/special_functions/erf.hpp>
 // #include "mapping_functions.h"

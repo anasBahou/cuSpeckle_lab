@@ -160,14 +160,43 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
 
 
 
-void write_csv_matrix(const char* filename, float* data, int height , int width , int depth )
+void write_csv_matrix(std:: string filename, float* data, int height , int width , int depth )
 {
 	std::ofstream myfile(filename);
-    myfile <<  height << "\n";
-    myfile <<  width <<  "\n";
-    myfile <<  depth <<  "\n";
+    myfile << width  << "\n";
+    myfile << height << "\n";
+    myfile << depth  << "\n";
+
 
 	for (int n = 0; n < height* width*depth; n++)
-	myfile << std::setprecision(16) << data[n+3] << "\n";
+	myfile << std::setprecision(16)<< data[n] << "\n";
 	
+}
+
+void write_csv_centers(std:: string filename, float* data, int size)
+{
+    std::ofstream myfile(filename);
+    
+    // save sphere centers into .csv file of size (size/3 x 3)
+    // each row represente a sphere of center x, y, z.  
+    for (int i=0; i<size; ++i)
+    {
+        myfile << std::setprecision(16) << data[3 * i]<<",";
+        myfile << std::setprecision(16) << data[3 * i+ 1]<<",";
+        myfile << std::setprecision(16) << data[3 * i+ 2]<<"\n";
+                
+    }
+}
+
+void write_csv_radius(std:: string filename, float* data, int size)
+{
+    std::ofstream myfile(filename);
+    
+    // save sphere radius into .csv file of size (size x 1)
+    // each row represente a sphere radius Rc.  
+    for (int i=0; i<size; ++i)
+    {
+        myfile << std::setprecision(16) << data[i]<<"\n";
+                
+    }
 }

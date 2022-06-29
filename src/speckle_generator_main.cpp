@@ -70,6 +70,12 @@ int main(int argc, char *argv[])
         height = (int)atoi(getCmdOption(argv, argv + argc, "-height"));
     else
         height = 500;
+    
+    if (cmdOptionExists(argv, argv + argc, "-depth"))
+        depth = (int)atoi(getCmdOption(argv, argv + argc, "-depth"));
+    else
+        depth = 500;
+    
 
     if (cmdOptionExists(argv, argv + argc, "-nbit"))
         nbit = (int)atoi(getCmdOption(argv, argv + argc, "-nbit"));
@@ -180,7 +186,15 @@ int main(int argc, char *argv[])
     std::cout << "precision : " << "float" << std::endl;
     std::cout << "------- Seed -------" << std::endl;
     std::cout << "seed : " << seed << std::endl;
+    /**************************************************/
+    /******** Debugging print out parameters    *******/
+    /******** and variable to check the program *******/
+    /********           correctness             *******/ 
+    /**************************************************/
 
+     //std::cout << "Estimated delta  : " << delta << std::endl;
+ 
+     
     /**************************************************/
     /*****  TIME AND CARRY OUT GRAIN RENDERING   ******/
     /**************************************************/
@@ -233,21 +247,27 @@ int main(int argc, char *argv[])
     float *imgOut = NULL;
     imgOut = (float *)malloc(width * height *depth * 1 * sizeof(float)); // number of channels is 3 <=> RGB
 
-    for (int i = 0; i < height; ++i)
+    // for (int i = 0; i < height; ++i)
+    // {
+    //     for (int j = 0; j < width; j++)
+    //     {    
+    //         for (int k = 0; k < depth; k++)
+    //         {
+    //         imgOut[(j + i * width) * 3 + k] = qt_out[(j + i * width) * 3 + k]; //red
+    //         }
+    //     }
+    // }
+    for (int i=0; i< height*width*depth; ++i)
     {
-        for (int j = 0; j < width; j++)
-        {    
-            for (int k = 0; k < depth; k++)
-            {
-            imgOut[(j + i * width) * 3 + k] = qt_out[(j + i * width) * 3 + k]; //red
-            }
-        }
+        imgOut[i]=qt_out[i]; // red
     }
 
-    int size= height*width*depth;
-    write_csv_matrix("FirstCuda3D.csv", imgOut, height, width, depth);
+   
+    write_csv_matrix(fileNameOut, imgOut, height, width, depth);
+
     
-    write_output_image(imgOut, fileNameOut, myParamSpeckle, myParamAlgo, myParamSensor);
+
+    // write_output_image(imgOut, fileNameOut, myParamSpeckle, myParamAlgo, myParamSensor);
 
     // free the allocated memory
     free(imgOut);

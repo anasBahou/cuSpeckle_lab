@@ -41,6 +41,12 @@ delta estimation function
 */
 float estimate_delta(vec3D<int> dims)
 {
+    return 0;
+
+}
+/*
+ float estimate_delta(vec3D<int> dims)
+{
     const int width = dims.x;
     const int height = dims.y;
     const int depth = dims.z;
@@ -106,6 +112,8 @@ float estimate_delta(vec3D<int> dims)
 
     return (float)(sqrt(max));
 }
+
+*/
 
 /** From cuda_samples/MC_EstimatePiP
  * @brief Calculate the sum within the block
@@ -382,7 +390,9 @@ int monte_carlo_estimation_cuda(float *speckle_matrix,
 
             if (NMC < 1)
             {
-                speckle_matrix[(z+(x - 1)*3 + (y - 1) * width*3)] = 1 - intensity; // x & y start at 1 instead of 0
+                // x  + height *( y + depth*z)
+                //(x - 1) + height*( (y - 1)+ depth*z)
+                speckle_matrix[x  + height*( y + depth * z)] = 1 - intensity; // x & y start at 1 instead of 0
             }
             else
             {
@@ -404,7 +414,8 @@ int monte_carlo_estimation_cuda(float *speckle_matrix,
                 }
                 
                 float intensity = (float)total/NMC;
-                speckle_matrix[z+(x - 1)*3 + (y - 1) * width * 3] = res + (1 - intensity) * ((float)NMC / (N0 + NMC));
+                speckle_matrix[x  + height*( y + depth * z)] = res + (1 - intensity) * ((float)NMC / (N0 + NMC));
+            
             }
 
             }
@@ -426,27 +437,3 @@ int monte_carlo_estimation_cuda(float *speckle_matrix,
 
     return EXIT_SUCCESS;
 }
-
-// template <typename T>
-// void monte_carlo_estimation_cuda(T *speckle_matrix, T *Random_centers, T *Random_radius, T *RBound, int number, unsigned int seed, int width, int height, T alpha, int nbit, T gamma, int N0)
-// {
-//     int test_success;
-//     if (typeid(T) == typeid(float)){
-//         test_success = MC_estimation_cuda_float((float *)speckle_matrix, (float *)Random_centers, (float *)Random_radius, (float *)RBound, number, seed, width, height, (float)alpha, nbit, (float)gamma, N0);
-//     }
-//     else if (typeid(T) == typeid(double)){
-//         test_success = MC_estimation_cuda_double((double *)speckle_matrix, (double *)Random_centers, (double *)Random_radius, (double *)RBound, number, seed, width, height, (double)alpha, nbit, (double)gamma, N0);
-//     }
-//     else{
-//         printf("Could not run MC estimation CUDA\n");
-//     }
-
-//     if (test_success==EXIT_SUCCESS)
-//         printf("^^^^ MC estimation CUDA test PASSED\n");
-//     else
-//         printf("Could not run MC estimation CUDA\n");
-
-// }
-
-// template void monte_carlo_estimation_cuda<float>(float *, float *, float *, float *, int, unsigned int, int, int, float, int, float, int);
-// template void monte_carlo_estimation_cuda<double>(double *, double *, double *, double *, int, unsigned int, int, int, double, int, double, int);

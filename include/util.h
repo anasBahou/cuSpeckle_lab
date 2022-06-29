@@ -29,7 +29,10 @@ int write_output_image(float *imgOut, const std::string fileNameOut,
                        paramSensor<float> myParamSensor);
 
 
-void write_csv_matrix(const char* filename, float* data,int height , int width , int depth );
+void write_csv_matrix(std:: string filename, float* data,int height , int width , int depth );
+
+void write_csv_centers(std:: string filename, float* data, int size);
+void write_csv_radius(std:: string filename, float* data, int size);
 
 
 

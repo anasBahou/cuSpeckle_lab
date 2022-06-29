@@ -1,5 +1,6 @@
 #include "boolean_model.h"
 
+#define DEBUG
 
 void generate_random_radius(float output[], float *kappa, float *theta,
                             paramSpeckle<float> myParamSpeckle,
@@ -111,15 +112,23 @@ void boolean_model(float *Random_centers,
         Random_centers[3 * i + 2] = (float)dims.z * (float)distribution(generator); // z of RC
     }
 
+    // write shere centers into .csv file 
+    //write_csv_centers("Random_centers.csv", Random_centers, number);
+
     float kappa = 0, theta = 0;
     // generate random radii
     generate_random_radius(Random_radius, &kappa, &theta, myParamSpeckle, dims, number, seed);
+
+    // write random radius into .csv file 
+    //write_csv_radius("Random_radius.csv", Random_radius, number);
 
     printf("coverage ratio: %f\nexpected perimeter: %f\n", kappa, theta);
     printf("largest Monte Carlo sample size: %d\n",
          (int)floor((float)((float)1 / pi / 2 * gamma * gamma * pow(2, (2 * nbit)) / (alpha * alpha))));
 
     // estimate delta
+
+    //float delta =0; // delta equal zero for reference image// no displacement involved 
     float delta = estimate_delta(dims);
     printf("Estimated delta : %E\n", delta);
 
@@ -133,14 +142,33 @@ void boolean_model(float *Random_centers,
     }
 
 #ifdef DEBUG
-    printf("A few samples from Random_radius : ");
+    printf(" Random_radius samples :");
+    printf("\n");
     for (int i = 0; i < 10; ++i)
     {
-        printf("%f* ", Random_radius[i]);
-        printf("%f, ", Random_centers[i]);
-        printf("%f| ", RBound[i]);
+        std:: cout << Random_radius[i]<< std:: endl;
     }
+
+    printf("Random_centers samples : ");
     printf("\n");
+    for (int i = 0; i < 10; ++i)
+    {
+        std:: cout << Random_centers[i]<< std:: endl;
+    }
+
+   
+
+    printf("RBound samples : ");
+    printf("\n");
+    for (int i = 0; i < 10; ++i)
+    {
+        std:: cout << Random_centers[i]<< std:: endl;
+    }
+    //     printf("%f* ", Random_radius[i]);
+    //     printf("%f, ", Random_centers[i]);
+    //     printf("%f| ", RBound[i]);
+    // }
+    // printf("\n");
 #endif
 }
 
