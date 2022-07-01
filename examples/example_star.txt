@@ -1,18 +1,16 @@
-// replace the code inside "func" in "speckle_generator_main.cpp" line 27 to 29 and in "MC_estimation_cuda.cu" line 32 to 35 with the mapping function such as the following "star" displacement:
+// replace the code inside "mapping" in "src/MC_estimation_cuda.cu"  with the mapping function such as the following "star" displacement:
 
-    T A = 5;
-    T decalage_origine = 125;
-    T periode_mini = 4;
-    T periode_maxi = 32;
-    T max_h = 2*decalage_origine;
-    T periode = x_in * (periode_maxi - periode_mini) / max_h + periode_mini;
+    float A = 5;
+    float decalage_origine = 0;
+    float periode = 50;
     *x_out = x_in;
-    *y_out = y_in + A * (T)cos(2 * my_pi / periode * (y_in - decalage_origine));
+    *y_out = y_in + A * sin(2 * pi / periode * (y_in - decalage_origine));
 
-// save both files
+// save modification
 
 // re-build the executable by running "make"
 
 // you can generate the figure results by running the following command line:
-./cuSpeckle def_star.png -width 500 -height 250
+
+    ./cuSpeckle def_star.png -width 500 -height 250
 
